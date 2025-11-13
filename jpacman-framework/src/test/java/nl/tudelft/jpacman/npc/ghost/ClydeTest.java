@@ -1,42 +1,107 @@
 package nl.tudelft.jpacman.npc.ghost;
 
+import com.google.common.collect.Lists;
 import nl.tudelft.jpacman.board.BoardFactory;
 import nl.tudelft.jpacman.board.Direction;
-import nl.tudelft.jpacman.level.*;
+import nl.tudelft.jpacman.level.Level;
+import nl.tudelft.jpacman.level.LevelFactory;
+import nl.tudelft.jpacman.level.Player;
+import nl.tudelft.jpacman.level.PlayerFactory;
 import nl.tudelft.jpacman.sprite.PacManSprites;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.awt.image.DirectColorModel;
-import java.util.Arrays;
-import java.util.List;
+
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-class ClydeTest {
-    private PacManSprites pacManSprites = new PacManSprites();
-    private PlayerFactory playerFactory = new PlayerFactory(pacManSprites);
-    private GhostFactory ghostFactory = new GhostFactory(pacManSprites);
-    private LevelFactory levelFactory = new LevelFactory(pacManSprites, ghostFactory);
-    private BoardFactory boardFactory = new BoardFactory(pacManSprites);
-    MapParser ghostMapParser = new GhostMapParser(levelFactory, boardFactory, ghostFactory);
+
+
+public class ClydeTest {
+
+
+        PacManSprites sprites = new PacManSprites();
+        GhostFactory ghostFactory = new GhostFactory(sprites);
+        LevelFactory levelFactory = new LevelFactory(sprites, ghostFactory);
+        BoardFactory boardFactory = new BoardFactory(sprites);
+        private GhostMapParser ghostMapParser = new GhostMapParser(levelFactory, boardFactory, ghostFactory);
+
 
     @Test
-    void distanceGreaterThan8AndPathBlockedTest() {
-        List<String> map = Arrays.asList(
-            "#############",
-            "#C#        P#",
-            "#############"
-        );
+    /*-T7: path_free => away from pacman*/
+    void Free_and_equal_to_8_distance() {
+        Level level = ghostMapParser.parseMap(Lists.newArrayList("############", "##P       C#", "############"));
 
-        Level level = ghostMapParser.parseMap(map);
-        Player pacman = playerFactory.createPacMan();
-        level.registerPlayer(pacman);
+        PlayerFactory playerFactory = new PlayerFactory(new PacManSprites());
+        Player player = playerFactory.createPacMan();
+        level.registerPlayer(player);
 
         Clyde clyde = Navigation.findUnitInBoard(Clyde.class, level.getBoard());
-        assertNotNull(clyde);
+
         Optional<Direction> direction = clyde.nextAiMove();
-        assertEquals(Optional.empty(), direction);
+
+        assertNotNull(direction);
+
+        assertThat(direction.get()).isEqualTo(Direction.EAST);
+
+    }
+
+    @Test
+    void Free_and_greater_than_8_distance() {
+        Level level = ghostMapParser.parseMap((Lists.newArrayList("############", "#P         C", "############")));
+
+        PlayerFactory playerFactory = new PlayerFactory(new PacManSprites());
+        Player player = playerFactory.createPacMan();
+        level.registerPlayer(player);
+
+        Clyde clyde = Navigation.findUnitInBoard(Clyde.class, level.getBoard());
+
+        Optional<Direction> direction = clyde.nextAiMove();
+
+        assertNotNull(direction);
+
+        assertThat(direction.get()).isEqualTo(Direction.WEST);
+    }
+
+    @Test
+    void Blocked_and_greater_than_8_distance() {
+        Level level = ghostMapParser.parseMap((Lists.newArrayList(
+            "############",
+            "#P    #    C",
+            "############")));
+
+        PlayerFactory playerFactory = new PlayerFactory(new PacManSprites());
+        Player player = playerFactory.createPacMan();
+        level.registerPlayer(player);
+
+        Clyde clyde = Navigation.findUnitInBoard(Clyde.class, level.getBoard());
+
+        Optional<Direction> direction = clyde.nextAiMove();
+        assertThat(direction).isEmpty();
+    }
+
+    @Test
+    void Multiple_paths_and_greater_than_8_distance() {
+        Level level = ghostMapParser.parseMap((Lists.newArrayList(
+            "############",
+            "#P        C#",
+            "# ######## #",
+            "# ######## #",
+            "#          #",
+            "############")));
+
+        PlayerFactory playerFactory = new PlayerFactory(new PacManSprites());
+        Player player = playerFactory.createPacMan();
+        level.registerPlayer(player);
+
+        Clyde clyde = Navigation.findUnitInBoard(Clyde.class, level.getBoard());
+
+        Optional<Direction> direction = clyde.nextAiMove();
+
+        assertNotNull(direction);
+
+        assertThat(direction.get()).isEqualTo(Direction.WEST);
     }
 }
+
